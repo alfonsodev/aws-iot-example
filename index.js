@@ -1,15 +1,17 @@
 'use strict'
 const AWS_REGION       = 'eu-west-1'
 const IDENTITY_POOL_ID = 'eu-west-1:00000000-0000-0000-0000-000000000000'
-const DOMAIN           = 'yourdomain.com'
-const IOT_HOST         = 'xxxxxxx.iot.eu-west-1.amazonaws.com'
+const DOMAIN           = 'domain.com'
+const IOT_HOST         = '0000000000000.iot.eu-west-1.amazonaws.com'
 const CLIENT_ID        = '123'
-const USERID           = 'feedf246-0000-499b-b94a-150881eb5cde';
+const UID              = 'aaaaaaaa-bbbb-cccc-dddd-wwwwwwwwwwww'; 
 
 var AWS              = require('aws-sdk')
 var awsIot           = require('aws-iot-device-sdk');
 var cognitoidentity  = new AWS.CognitoIdentity()
 AWS.config.logger    = 'process.stdout'
+
+
 
 var connectDeviceWithCredentials = function(cred) {
   var device = awsIot.device({
@@ -24,6 +26,7 @@ var connectDeviceWithCredentials = function(cred) {
   })
 
   device.updateWebSocketCredentials(cred.AccessKeyId, cred.SecretKey, cred.SessionToken, cred.Expiration)
+
   device.on('connect', function(err, data) {
   	if (err) {
 	    console.log(`Connection Error: ${err}`);
@@ -40,7 +43,7 @@ var connectDeviceWithCredentials = function(cred) {
   });
 }
 
-var createIdentity = function(userId) {
+var createIdentity = function(uid) {
 	return new Promise(function(resolve, reject) {
 		var params = {
 		  IdentityPoolId: IDENTITY_POOL_ID, /* required */
@@ -48,7 +51,7 @@ var createIdentity = function(userId) {
 		  TokenDuration: 60 * 60 * 24  
 		};
 
-		params.Logins[DOMAIN] = userId 
+		params.Logins[DOMAIN] = uid
 		cognitoidentity.getOpenIdTokenForDeveloperIdentity(params, function(err, data) {
 		  if (err) reject(err); 
 		  else     resolve(data);
@@ -72,7 +75,7 @@ var getCredentials = function(indeittyId, customRoleArn, login) {
 	})
 }
 
-createIdentity(USERID).then((data) => {
+createIdentity(UID).then((data) => {
 	console.log(`indentity id: %s`, data.IdentityId)
 	getCredentials(data.IdentityId, null, data.Token).then((data) => {
 		console.log(`Credentials: %j`, data.Credentials)
